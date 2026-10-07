@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  sortOrder   Int       @default(0)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id          String           @id @default(cuid())
+  name        String
+  slug        String           @unique
+  description String
+  imageUrl    String?
+  badge       String?
+  active      Boolean          @default(true)
+  featured    Boolean          @default(false)
+  videoNote   String           @default("Once arranged, your florist will send a video via WhatsApp or email for your approval before delivery.")
+  specs       String?
+  categoryId  String
+  category    Category         @relation(fields: [categoryId], references: [id])
+  variants    ProductVariant[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  sku       String?
+  priceKobo Int
+  color     String?
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Addon {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  type        String
+  priceKobo   Int      @default(0)
+  imageUrl    String?
+  active      Boolean  @default(true)
+  backSoon    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  status          String      @default("PENDING")
+  senderName      String
+  senderEmail     String
+  senderPhone     String
+  recipientName   String
+  recipientPhone  String
+  deliveryAddress String
+  deliveryCity    String      @default("Lagos")
+  deliveryDate    String?
+  giftMessage     String?
+  subtotalKobo    Int
+  totalKobo       Int
+  notes           String?
+  items           OrderItem[]
+  payment         Payment?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  variantId   String
+  productName String
+  variantName String
+  quantity    Int
+  unitKobo    Int
+  lineKobo    Int
+}
+
+model Payment {
+  id             String    @id @default(cuid())
+  orderId        String    @unique
+  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider       String    @default("paystack")
+  reference      String    @unique
+  accessCode     String?
+  amountKobo     Int
+  status         String    @default("initialized")
+  paystackStatus String?
+  paidAt         DateTime?
+  raw            String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  authorName String
+  title      String
+  body       String
+  rating     Int      @default(5)
+  published  Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  sortOrder Int      @default(0)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteSetting {
+  id             String @id @default("main")
+  brandName      String @default("FLOWER ROOM")
+  tagline        String @default("THE ART OF GIFTING")
+  phone          String @default("+234 915 535 3128")
+  email          String @default("theroomng@gmail.com")
+  whatsapp       String @default("2349155353128")
+  facebookUrl    String @default("https://www.facebook.com/p/Flower-Room-Nigeria-61581423721745/")
+  instagramUrl   String @default("https://www.instagram.com/flower_room_ng")
+  tiktokUrl      String @default("https://www.tiktok.com/@flowerroomng")
+  bannerLeft     String @default("5 Star reviews")
+  bannerCenter   String @default("Same-day delivery across Lagos")
+  bannerRight    String @default("Video Approval on all orders")
+  heroTitle      String @default("A Month in Pink")
+  heroSubtitle   String @default("Premium fresh flowers for Nigeria — wholesale & retail. Same-day delivery across Lagos.")
+  heroImageUrl   String @default("/images/hero.jpg")
+  heroCtaLabel   String @default("SHOP NOW")
+  heroCtaHref    String @default("/shop")
+}
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
