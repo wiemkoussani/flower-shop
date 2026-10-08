@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatNaira } from "@/lib/format";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 type Addon = {
   id: string;
@@ -17,6 +18,7 @@ type Addon = {
 export function AddonManager({ addons }: { addons: Addon[] }) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   async function createAddon(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -31,7 +33,7 @@ export function AddonManager({ addons }: { addons: Addon[] }) {
         slug: name.toLowerCase().replace(/\s+/g, "-") + "-" + Date.now().toString(36),
         type: form.get("type"),
         priceKobo: Math.round(Number(form.get("priceNaira") || 0) * 100),
-        imageUrl: form.get("imageUrl") || null,
+        imageUrl,
         active: true,
         backSoon: form.get("backSoon") === "on",
       }),
@@ -42,6 +44,7 @@ export function AddonManager({ addons }: { addons: Addon[] }) {
       return;
     }
     (e.target as HTMLFormElement).reset();
+    setImageUrl(null);
     router.refresh();
   }
 
@@ -72,10 +75,7 @@ export function AddonManager({ addons }: { addons: Addon[] }) {
           <label className="label">Price (₦)</label>
           <input name="priceNaira" type="number" min={0} defaultValue={0} className="input" />
         </div>
-        <div>
-          <label className="label">Image URL</label>
-          <input name="imageUrl" className="input" />
-        </div>
+        <ImageUpload value={imageUrl} onChange={setImageUrl} folder="addons" label="Photo" />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="backSoon" /> Back soon
         </label>
@@ -88,16 +88,24 @@ export function AddonManager({ addons }: { addons: Addon[] }) {
       <ul className="space-y-2">
         {addons.map((a) => (
           <li key={a.id} className="flex items-center justify-between gap-3 border border-line bg-white px-4 py-3 text-sm">
-            <div>
-              <p className="font-medium">
-                [{a.type}] {a.name}
-              </p>
-              <p className="text-muted">
-                {formatNaira(a.priceKobo)}
-                {a.backSoon ? " · Back soon" : ""}
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 shrink-0 overflow-hidden border border-line bg-cream">
+                {a.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={a.imageUrl} alt="" className="h-full w-full object-cover" />
+                ) : null}
+              </div>
+              <div>
+                <p className="font-medium">
+                  [{a.type}] {a.name}
+                </p>
+                <p className="text-muted">
+                  {formatNaira(a.priceKobo)}
+                  {a.backSoon ? " · Back soon" : ""}
+                </p>
+              </div>
             </div>
-            <button type="button" className="text-magenta text-xs" onClick={() => remove(a.id)}>
+            <button type="button" className="text-magenta text-xs uppercase tracking-wide" onClick={() => remove(a.id)}>
               Delete
             </button>
           </li>

@@ -25,14 +25,23 @@ type Settings = {
   bannerRight: string;
 };
 
+type CustomerUser = { id: string; name: string; email: string } | null;
+
 export function Header({ settings }: { settings: Settings }) {
   const count = useCart((s) => s.items.reduce((n, i) => n + i.quantity, 0));
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  const [user, setUser] = useState<CustomerUser>(null);
   const router = useRouter();
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : { user: null }))
+      .then((d) => setUser(d.user ?? null))
+      .catch(() => setUser(null));
+  }, []);
 
   function onSearch(e: FormEvent) {
     e.preventDefault();
@@ -110,12 +119,12 @@ export function Header({ settings }: { settings: Settings }) {
               </button>
             </form>
             <div className="header-actions flex items-center gap-4 text-[12px] tracking-[0.08em] uppercase text-[#111]">
-              <Link href="/admin/login" className="inline-flex items-center gap-1.5 hover:text-magenta">
+              <Link href={user ? "/account" : "/account/login"} className="inline-flex items-center gap-1.5 hover:text-magenta">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="8" r="3.5" />
                   <path d="M5 20c1.5-3.5 4-5 7-5s5.5 1.5 7 5" />
                 </svg>
-                <span className="hidden md:inline">Login</span>
+                <span className="hidden md:inline">{user ? "Account" : "Login"}</span>
               </Link>
               <Link href="/cart" className="relative inline-flex items-center gap-1.5 hover:text-magenta">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

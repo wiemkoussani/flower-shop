@@ -1,9 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useCart } from "@/lib/cart-store";
 import { formatNaira } from "@/lib/format";
+
+type CustomerUser = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+};
 
 export default function CheckoutPage() {
   const items = useCart((s) => s.items);
@@ -11,6 +18,14 @@ export default function CheckoutPage() {
   const clear = useCart((s) => s.clear);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [user, setUser] = useState<CustomerUser | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : { user: null }))
+      .then((d) => setUser(d.user ?? null))
+      .catch(() => setUser(null));
+  }, []);
 
   if (items.length === 0) {
     return (
@@ -66,21 +81,58 @@ export default function CheckoutPage() {
         <p className="mt-2 text-sm text-muted">
           Pay securely online with Paystack. We&apos;ll confirm and send a video approval before delivery.
         </p>
-        <form onSubmit={onSubmit} className="mt-8 space-y-8">
+        {!user && (
+          <p className="mt-4 text-sm text-muted">
+            Have an account?{" "}
+            <Link href="/account/login?next=/checkout" className="text-magenta underline underline-offset-2">
+              Sign in
+            </Link>{" "}
+            for faster checkout, or{" "}
+            <Link href="/account/register" className="text-magenta underline underline-offset-2">
+              create one
+            </Link>
+            .
+          </p>
+        )}
+        {user && (
+          <p className="mt-4 text-sm text-muted">
+            Signed in as <span className="font-medium text-ink">{user.email}</span> — your details are prefilled.
+          </p>
+        )}
+        <form onSubmit={onSubmit} className="mt-8 space-y-8" key={user?.id || "guest"}>
           <fieldset className="space-y-4">
             <legend className="text-xs tracking-[0.14em] uppercase text-magenta">Sender</legend>
             <div>
               <label className="label" htmlFor="senderName">Full name</label>
-              <input id="senderName" name="senderName" className="input" required />
+              <input
+                id="senderName"
+                name="senderName"
+                className="input"
+                required
+                defaultValue={user?.name || ""}
+              />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="label" htmlFor="senderEmail">Email</label>
-                <input id="senderEmail" name="senderEmail" type="email" className="input" required />
+                <input
+                  id="senderEmail"
+                  name="senderEmail"
+                  type="email"
+                  className="input"
+                  required
+                  defaultValue={user?.email || ""}
+                />
               </div>
               <div>
                 <label className="label" htmlFor="senderPhone">Phone</label>
-                <input id="senderPhone" name="senderPhone" className="input" required />
+                <input
+                  id="senderPhone"
+                  name="senderPhone"
+                  className="input"
+                  required
+                  defaultValue={user?.phone || ""}
+                />
               </div>
             </div>
           </fieldset>

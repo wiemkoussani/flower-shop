@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -64,10 +64,24 @@ model Addon {
   updatedAt   DateTime @updatedAt
 }
 
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String
+  name            String
+  phone           String?
+  marketingOptIn  Boolean  @default(true)
+  orders          Order[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 model Order {
   id              String      @id @default(cuid())
   orderNumber     String      @unique
   status          String      @default("PENDING")
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   senderName      String
   senderEmail     String
   senderPhone     String

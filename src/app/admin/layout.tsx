@@ -4,8 +4,10 @@ import { isAdminAuthenticated } from "@/lib/auth";
 const LINKS = [
   ["/admin", "Dashboard"],
   ["/admin/products", "Products"],
+  ["/admin/categories", "Sections"],
   ["/admin/addons", "Add-ons"],
   ["/admin/orders", "Orders"],
+  ["/admin/customers", "Customers"],
   ["/admin/reviews", "Reviews"],
   ["/admin/faqs", "FAQs"],
   ["/admin/settings", "Settings"],

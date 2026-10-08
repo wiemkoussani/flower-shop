@@ -136,7 +136,7 @@ export function Footer({ settings }: { settings: Settings }) {
             <p className="mb-3 font-bold text-ink">Info</p>
             <ul className="space-y-2">
               <li>
-                <Link href="/admin/login" className="hover:text-magenta">
+                <Link href="/account" className="hover:text-magenta">
                   My Account
                 </Link>
               </li>

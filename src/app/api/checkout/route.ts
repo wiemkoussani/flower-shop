@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { generateOrderNumber } from "@/lib/format";
 import { initializePaystack, isPaystackConfigured } from "@/lib/paystack";
+import { getCustomerSession } from "@/lib/customer-auth";
 
 const schema = z.object({
   senderName: z.string().min(2),
@@ -61,11 +62,13 @@ export async function POST(req: Request) {
     const orderNumber = generateOrderNumber();
     const reference = `fr_${orderNumber.replace(/-/g, "").toLowerCase()}`;
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const session = await getCustomerSession();
 
     const order = await prisma.order.create({
       data: {
         orderNumber,
         status: "PENDING",
+        userId: session?.userId || null,
         senderName: body.senderName,
         senderEmail: body.senderEmail,
         senderPhone: body.senderPhone,

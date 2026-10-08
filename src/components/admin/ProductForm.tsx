@@ -2,23 +2,21 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 type Category = { id: string; name: string };
-type VariantInput = { id?: string; name: string; priceNaira: string; color: string };
+type VariantInput = { id?: string; name: string; priceNaira: string };
 
 type Props = {
   categories: Category[];
   product?: {
     id: string;
     name: string;
-    slug: string;
     description: string;
     imageUrl: string | null;
     badge: string | null;
     active: boolean;
     featured: boolean;
-    videoNote: string;
-    specs: string | null;
     categoryId: string;
     variants: { id: string; name: string; priceKobo: number; color: string | null }[];
   };
@@ -28,13 +26,13 @@ export function ProductForm({ categories, product }: Props) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(product?.imageUrl || null);
   const [variants, setVariants] = useState<VariantInput[]>(
     product?.variants.map((v) => ({
       id: v.id,
       name: v.name,
       priceNaira: String(v.priceKobo / 100),
-      color: v.color || "",
-    })) || [{ name: "Standard", priceNaira: "0", color: "" }],
+    })) || [{ name: "Standard", priceNaira: "0" }],
   );
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -44,20 +42,17 @@ export function ProductForm({ categories, product }: Props) {
     const form = new FormData(e.currentTarget);
     const payload = {
       name: form.get("name"),
-      slug: form.get("slug"),
       description: form.get("description"),
-      imageUrl: form.get("imageUrl") || null,
+      imageUrl,
       badge: form.get("badge") || null,
       categoryId: form.get("categoryId"),
       active: form.get("active") === "on",
       featured: form.get("featured") === "on",
-      videoNote: form.get("videoNote"),
-      specs: form.get("specs") || null,
       variants: variants.map((v, i) => ({
         id: v.id,
-        name: v.name,
-        priceKobo: Math.round(Number(v.priceNaira) * 100),
-        color: v.color || null,
+        name: v.name || "Standard",
+        priceKobo: Math.round(Number(v.priceNaira) * 100) || 0,
+        color: null,
         sortOrder: i,
       })),
     };
@@ -79,18 +74,31 @@ export function ProductForm({ categories, product }: Props) {
     router.refresh();
   }
 
+  if (categories.length === 0) {
+    return (
+      <p className="text-sm text-muted">
+        Create a shop section first under{" "}
+        <a href="/admin/categories" className="text-magenta underline">
+          Sections
+        </a>
+        , then add products.
+      </p>
+    );
+  }
+
   return (
-    <form onSubmit={onSubmit} className="max-w-2xl space-y-5">
+    <form onSubmit={onSubmit} className="max-w-xl space-y-5">
       <div>
-        <label className="label" htmlFor="name">Name</label>
-        <input id="name" name="name" className="input" defaultValue={product?.name} required />
+        <label className="label" htmlFor="name">
+          Product name
+        </label>
+        <input id="name" name="name" className="input" defaultValue={product?.name} required placeholder="e.g. Pink Delight Hatbox" />
       </div>
+
       <div>
-        <label className="label" htmlFor="slug">Slug</label>
-        <input id="slug" name="slug" className="input" defaultValue={product?.slug} required />
-      </div>
-      <div>
-        <label className="label" htmlFor="categoryId">Category</label>
+        <label className="label" htmlFor="categoryId">
+          Section
+        </label>
         <select id="categoryId" name="categoryId" className="input" defaultValue={product?.categoryId} required>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
@@ -98,84 +106,51 @@ export function ProductForm({ categories, product }: Props) {
             </option>
           ))}
         </select>
+        <p className="mt-1 text-[12px] text-muted">
+          Choose where it appears in the shop. Manage sections in{" "}
+          <a href="/admin/categories" className="text-magenta underline">
+            Sections
+          </a>
+          .
+        </p>
       </div>
+
+      <ImageUpload value={imageUrl} onChange={setImageUrl} folder="products" label="Product photo" />
+
       <div>
-        <label className="label" htmlFor="description">Description</label>
+        <label className="label" htmlFor="description">
+          Description
+        </label>
         <textarea
           id="description"
           name="description"
           className="input min-h-28"
           defaultValue={product?.description}
           required
+          placeholder="Short description customers will see"
         />
-      </div>
-      <div>
-        <label className="label" htmlFor="imageUrl">Image URL</label>
-        <input id="imageUrl" name="imageUrl" className="input" defaultValue={product?.imageUrl || ""} />
-      </div>
-      <div>
-        <label className="label" htmlFor="badge">Badge (e.g. free upgrade to large)</label>
-        <input id="badge" name="badge" className="input" defaultValue={product?.badge || ""} />
-      </div>
-      <div>
-        <label className="label" htmlFor="videoNote">
-          Video approval (shown on product page)
-        </label>
-        <p className="mb-1 text-[12px] text-muted">
-          Client asked for this on every order — florist sends video via WhatsApp/email before delivery.
-        </p>
-        <textarea
-          id="videoNote"
-          name="videoNote"
-          className="input min-h-20"
-          defaultValue={
-            product?.videoNote ||
-            "Once arranged, your florist will send a video via WhatsApp or email for your approval before delivery."
-          }
-        />
-      </div>
-      <div>
-        <label className="label" htmlFor="specs">
-          What&apos;s included / notes (optional)
-        </label>
-        <p className="mb-1 text-[12px] text-muted">
-          For gift sets: cake, card and balloons are included in the set price — not extra add-ons.
-          Hand-tied bouquets are flowers only unless you write otherwise here.
-        </p>
-        <textarea
-          id="specs"
-          name="specs"
-          className="input min-h-24"
-          defaultValue={product?.specs || ""}
-          placeholder="e.g. Includes arrangement + bento cake + card + balloons"
-        />
-      </div>
-      <div className="flex gap-6">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="active" defaultChecked={product?.active ?? true} /> Active
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="featured" defaultChecked={product?.featured ?? false} /> Featured
-        </label>
       </div>
 
       <div>
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs tracking-[0.14em] uppercase text-magenta">Variants / prices (₦)</p>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-xs tracking-[0.14em] uppercase text-magenta">Price (₦)</p>
           <button
             type="button"
             className="text-sm text-magenta"
-            onClick={() => setVariants((v) => [...v, { name: "", priceNaira: "0", color: "" }])}
+            onClick={() => setVariants((v) => [...v, { name: "", priceNaira: "0" }])}
           >
-            + Add variant
+            + Add size / option
           </button>
         </div>
+        <p className="mb-3 text-[12px] text-muted">
+          Use 0 for “enquire on WhatsApp”. Add more rows only if you sell sizes (Small / Large).
+        </p>
         <div className="space-y-3">
           {variants.map((v, i) => (
-            <div key={i} className="grid gap-2 sm:grid-cols-3">
+            <div key={i} className="grid gap-2 sm:grid-cols-[1.2fr_1fr_auto]">
               <input
                 className="input"
-                placeholder="Name (e.g. Small)"
+                placeholder="Size name (e.g. Standard)"
                 value={v.name}
                 onChange={(e) =>
                   setVariants((list) =>
@@ -186,7 +161,7 @@ export function ProductForm({ categories, product }: Props) {
               />
               <input
                 className="input"
-                placeholder="Price Naira"
+                placeholder="Price in Naira"
                 type="number"
                 min={0}
                 value={v.priceNaira}
@@ -197,35 +172,41 @@ export function ProductForm({ categories, product }: Props) {
                 }
                 required
               />
-              <div className="flex gap-2">
-                <input
-                  className="input"
-                  placeholder="Color (optional)"
-                  value={v.color}
-                  onChange={(e) =>
-                    setVariants((list) =>
-                      list.map((row, idx) => (idx === i ? { ...row, color: e.target.value } : row)),
-                    )
-                  }
-                />
-                {variants.length > 1 && (
-                  <button
-                    type="button"
-                    className="btn-ghost px-3"
-                    onClick={() => setVariants((list) => list.filter((_, idx) => idx !== i))}
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
+              {variants.length > 1 ? (
+                <button
+                  type="button"
+                  className="btn-ghost px-3"
+                  onClick={() => setVariants((list) => list.filter((_, idx) => idx !== i))}
+                >
+                  Remove
+                </button>
+              ) : (
+                <span />
+              )}
             </div>
           ))}
         </div>
       </div>
 
+      <div>
+        <label className="label" htmlFor="badge">
+          Badge (optional)
+        </label>
+        <input id="badge" name="badge" className="input" defaultValue={product?.badge || ""} placeholder="e.g. Best seller" />
+      </div>
+
+      <div className="flex gap-6">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="active" defaultChecked={product?.active ?? true} /> Show in shop
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="featured" defaultChecked={product?.featured ?? false} /> Featured on home
+        </label>
+      </div>
+
       {error && <p className="text-sm text-magenta">{error}</p>}
       <button type="submit" className="btn-primary" disabled={loading}>
-        {loading ? "Saving…" : "Save product"}
+        {loading ? "Saving…" : product ? "Save changes" : "Add product"}
       </button>
     </form>
   );

@@ -12,7 +12,8 @@ export default async function NewProductPage() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl">New product</h1>
+      <h1 className="font-display text-3xl">Add product</h1>
+      <p className="mt-2 text-sm text-muted">Name, section, photo upload, price and description — then it appears in the shop.</p>
       <div className="mt-6">
         <ProductForm categories={categories} />
       </div>
